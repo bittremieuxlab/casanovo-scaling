@@ -4,12 +4,12 @@
 
 cd $PBS_O_WORKDIR
 
-export PATH="$VSC_SCRATCH_PROJECTS_BASE/2025_048/miniconda3/bin:${PATH}"
-source activate casanovo-scaling
+export PATH="/readonly$VSC_SCRATCH_PROJECTS_BASE/2025_048/miniconda3/bin:${PATH}"
+source activate casanovo-scaling-readonly
 
 READONLY_BASE="/readonly$VSC_SCRATCH_PROJECTS_BASE/2025_048/casanovo-scaling"
 
-casanovo train \
+/readonly$VSC_SCRATCH_PROJECTS_BASE/2025_048/miniconda3/envs/casanovo-scaling-readonly/bin/casanovo train \
 $READONLY_BASE/$TRAIN_FILE \
 --validation_peak_path $READONLY_BASE/$VAL_FILE \
 --config $READONLY_BASE/$CONFIG_FILE \

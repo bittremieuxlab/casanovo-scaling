@@ -194,15 +194,39 @@ if __name__ == "__main__":
     #         "valid_CELoss",
     #     ],
     # )
+    # sync_metrics(
+    #     dbclient,
+    #     experiment_name="optimizer_2",
+    #     log_dir="logs/optimizer_2/",
+    #     metric_keys=[
+    #         "lr-Adam",
+    #         "lr-AdamW",
+    #         "lr-Adam-momentum",
+    #         "lr-AdamW-momentum",
+    #         "train_CELoss_step",
+    #         "valid_CELoss",
+    #     ],
+    # )
+    #
+    # sync_metrics(
+    #     dbclient,
+    #     experiment_name="label_smoothing",
+    #     log_dir="logs/label_smoothing/",
+    #     metric_keys=[
+    #         "lr-Adam",
+    #         "lr-Adam-momentum",
+    #         "train_CELoss_step",
+    #         "valid_CELoss",
+    #     ],
+    # )
+
     sync_metrics(
         dbclient,
-        experiment_name="optimizer_2",
-        log_dir="logs/optimizer_2/",
+        experiment_name="v2_train_subsets",
+        log_dir="logs/v2_train_subsets/",
         metric_keys=[
             "lr-Adam",
-            "lr-AdamW",
             "lr-Adam-momentum",
-            "lr-AdamW-momentum",
             "train_CELoss_step",
             "valid_CELoss",
         ],

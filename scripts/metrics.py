@@ -1,12 +1,10 @@
 import os
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from matplotlib import colors
 from scipy.interpolate import griddata
-
-from scripts.hpt import load_past_results
 
 
 def metrics_from_hpt(experiment, x, y, z, max_z=None):
@@ -100,13 +98,16 @@ def plot_training_metrics(csv_path):
     plt.show()
 
 
-def plot_train_subsets_grid(root_dir="logs/casanovo_train_subsets"):
-    heatmap = np.full((5, 5), np.nan)
+def plot_train_subsets_grid(
+    root_dir="logs/casanovo_train_subsets", max_loss=0.5
+):
 
     spectra = []
     peptides = []
     vals = {}
     for d in os.listdir(root_dir):
+        if "test" in d:
+            continue
         spec, pep = d.split("_")
         spec = int(spec[:-1])
         pep = int(pep[:-1])
@@ -116,12 +117,14 @@ def plot_train_subsets_grid(root_dir="logs/casanovo_train_subsets"):
             os.path.join(root_dir, d, "csv_logs", "metrics.csv")
         )
         val = metrics_df["valid_CELoss"].min()
-        if val > 0.6:
+        if val > max_loss:
             val = np.nan
         vals[pep, spec] = val
 
     spectra = sorted(set(spectra))
     peptides = sorted(set(peptides))
+    heatmap = np.full((len(peptides), len(spectra)), np.nan)
+
     for s in spectra:
         for p in peptides:
             val = vals[p, s]
@@ -139,6 +142,18 @@ def plot_train_subsets_grid(root_dir="logs/casanovo_train_subsets"):
     plt.yticks(ticks=range(len(peptides)), labels=peptides)
     plt.xlabel("# Spectra")
     plt.ylabel("# Unique peptides")
+    plt.tight_layout()
+    plt.show()
+
+    plt.figure(figsize=(8, 5))
+
+    # Plot one line per spectrum
+    for j, s in enumerate(spectra):
+        plt.plot(peptides, heatmap[:, j], marker="o", label=f"{s} spectra")
+
+    plt.xlabel("# Unique peptides")
+    plt.ylabel("Min validation loss")
+    plt.legend(title="# Spectra", bbox_to_anchor=(1.04, 1), loc="upper left")
     plt.tight_layout()
     plt.show()
 
@@ -283,7 +298,7 @@ def plot_gradient_clip_results(root_dir="logs/introducing_new"):
     plt.show()
 
 
-def load_results(root_dir: str):
+def load_results(root_dir: str, max_loss=None):
     """Load all runs into a list of dicts."""
     results = []
     for d in os.listdir(root_dir):
@@ -297,7 +312,7 @@ def load_results(root_dir: str):
             continue
 
         val_loss = metrics_df["valid_CELoss"].min()
-        if val_loss > 0.6:  # ignore failed runs
+        if max_loss is not None and val_loss > max_loss:  # ignore failed runs
             val_loss = np.nan
 
         params["min_val_loss"] = val_loss
@@ -315,7 +330,7 @@ def plot_param_vs_lr(df, param_name: str):
         .reset_index()
     )
 
-    plt.figure(figsize=(7, 5))
+    plt.figure(figsize=(6, 5))
     for param_value, subset in agg.groupby(param_name):
         lrs = subset["learning_rate"].to_numpy()
         losses = subset["min_val_loss"].to_numpy()
@@ -403,11 +418,13 @@ def plot_2D_heatmap(experiment, x, y, z, max_z=None, method="nearest"):
     plt.show()
 
 
-def plot_grid_search_results(root_dir="logs/optimizer", params=None):
+def plot_grid_search_results(
+    root_dir="logs/optimizer", params=None, max_loss=None
+):
     if params is None:
         params = ["betas", "optimizer", "weight_decay"]
 
-    df = load_results(root_dir)
+    df = load_results(root_dir, max_loss)
 
     print(f"Loaded {len(df)} runs with columns: {list(df.columns)}")
 
@@ -422,7 +439,7 @@ if __name__ == "__main__":
     # plot_training_metrics(
     #     "logs/casanovo_train_subsets/1s_100000p/csv_logs/metrics.csv"
     # )
-    # plot_train_subsets_grid()
+    plot_train_subsets_grid(max_loss=0.5)
 
     # load_past_results(
     #     name="bs_lr_default",
@@ -450,5 +467,13 @@ if __name__ == "__main__":
     # plot_lr_scheduler_results()
 
     # plot_gradient_clip_results()
+    # plot_grid_search_results(root_dir="logs/optimizer")
 
-    plot_grid_search_results(root_dir="logs/optimizer_2")
+    # plot_grid_search_results(root_dir="logs/optimizer_2")
+
+    # plot_grid_search_results(
+    #     root_dir="logs/label_smoothing",
+    #     params=["train_label_smoothing"],
+    #     max_loss=0.3,
+    # )
+    # plot_train_subsets_grid("logs/v2_train_subsets", max_loss=0.5)
