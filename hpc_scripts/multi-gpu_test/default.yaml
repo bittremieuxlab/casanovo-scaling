@@ -143,7 +143,7 @@ warmup_iters: 100000
 # The number of iterations for the cosine half period of the learning rate.
 cosine_schedule_period_iters: 600000
 # Learning rate for weight updates during training.
-learning_rate: 6.9e-4
+learning_rate: 5e-4
 
 # Amount of label smoothing when computing the training loss.
 train_label_smoothing: 0.001
@@ -165,7 +165,7 @@ num_sanity_val_steps: 0
 calculate_precision: false
 
 # Accumulates gradients over `k` batches before stepping the optimizer.
-accumulate_grad_batches: 1
+accumulate_grad_batches:
 # The value at which to clip gradients. `None` disables gradient clipping.
 gradient_clip_val: 2.
 # The gradient clipping algorithm to use.
@@ -213,6 +213,7 @@ residues:
   'S[Phospho]': 166.998028
   'T[Phospho]': 181.01367
   'Y[Phospho]': 243.029329
+
   # N-terminal modifications.
   "[Acetyl]-": 42.010565                  # Acetylation
   "[Carbamyl]-": 43.005814                # Carbamylation
