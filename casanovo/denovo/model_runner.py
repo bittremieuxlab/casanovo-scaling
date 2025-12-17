@@ -30,7 +30,7 @@ from ..data import db_utils, ms_io
 from ..denovo.dataloaders import DeNovoDataModule
 from ..denovo.evaluate import aa_match_batch, aa_match_metrics
 from ..denovo.model import DbSpec2Pep, Spec2Pep
-from ..utils import GlobalBatchProgressBar, divisors
+from ..utils import GlobalStepTQDMProgressBar, divisors
 
 logger = logging.getLogger("casanovo")
 
@@ -466,7 +466,7 @@ class ModelRunner:
                 accumulate_grad_batches=self.config.accumulate_grad_batches,
                 gradient_clip_val=self.config.gradient_clip_val,
                 gradient_clip_algorithm=self.config.gradient_clip_algorithm,
-                callbacks=self.callbacks + [GlobalBatchProgressBar()],
+                callbacks=self.callbacks + [GlobalStepTQDMProgressBar()],
                 check_val_every_n_epoch=None,
                 enable_checkpointing=True,
                 logger=loggers,
