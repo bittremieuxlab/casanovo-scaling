@@ -460,7 +460,6 @@ class ModelRunner:
                 devices=devices,
                 val_check_interval=self.config.val_check_interval
                 * self.config.accumulate_grad_batches,
-                # * devices,
                 max_steps=max_steps,
                 max_epochs=max_epochs,
                 num_sanity_val_steps=self.config.num_sanity_val_steps,

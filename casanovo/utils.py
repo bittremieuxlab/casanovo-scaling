@@ -16,6 +16,8 @@ import pandas as pd
 import psutil
 import torch
 from lightning.pytorch.callbacks import TQDMProgressBar
+import lightning.pytorch as pl
+from tqdm import tqdm
 
 from . import __version__
 from .data.psm import PepSpecMatch
@@ -277,21 +279,91 @@ def divisors(n, reverse: bool = True) -> Iterable[int]:
     return sorted(divs, reverse=reverse)
 
 
-class GlobalBatchProgressBar(TQDMProgressBar):
-    def init_train_tqdm(self):
-        bar = super().init_train_tqdm()
-        # override bar description
-        bar.set_description("Global Step")
-        return bar
+# class GlobalBatchProgressBar(TQDMProgressBar):
+#     def init_train_tqdm(self):
+#         bar = super().init_train_tqdm()
+#         # override bar description
+#         bar.set_description("Global Step")
+#         return bar
+#
+#     def on_train_batch_end(
+#         self, trainer, pl_module, outputs, batch, batch_idx
+#     ):
+#         # compute effective global step = optimizer updates
+#         global_step = trainer.global_step
+#         max_steps = trainer.max_steps
+#         bar = self.train_progress_bar
+#         if bar:
+#             bar.n = global_step
+#             bar.total = max_steps
+#             bar.refresh()
+
+
+class GlobalStepTQDMProgressBar(TQDMProgressBar):
+    """One continuous tqdm bar over optimizer steps (global_step), with stable ETA across epochs."""
+
+    def __init__(
+        self,
+        refresh_rate: int = 1,
+        process_position: int = 0,
+        leave: bool = True,
+    ):
+        super().__init__(
+            refresh_rate=refresh_rate, process_position=process_position
+        )
+        self.leave = leave
+        self._last_gs = -1
+        self._bar: Optional[tqdm] = None
+
+    def on_train_start(
+        self, trainer: pl.Trainer, pl_module: pl.LightningModule
+    ) -> None:
+        # Do NOT call super(): it will create an epoch-scoped bar.
+        if not trainer.is_global_zero:
+            return
+
+        total = int(trainer.max_steps or 0)
+        initial = int(trainer.global_step)
+
+        self._bar = tqdm(
+            desc="Global Step",
+            total=total if total > 0 else None,
+            initial=initial,
+            position=self.process_position,
+            dynamic_ncols=True,
+            leave=self.leave,
+        )
+        self._last_gs = initial
+
+        # Let Lightning know what bar to treat as the train bar (for consistency with its internals)
+        self.train_progress_bar = self._bar
+
+    def on_train_epoch_start(
+        self, trainer: pl.Trainer, pl_module: pl.LightningModule
+    ) -> None:
+        # Don't let parent reset/recreate anything
+        self._last_gs = int(trainer.global_step)
 
     def on_train_batch_end(
         self, trainer, pl_module, outputs, batch, batch_idx
-    ):
-        # compute effective global step = optimizer updates
-        global_step = trainer.global_step
-        max_steps = trainer.max_steps
-        bar = self.train_progress_bar
-        if bar:
-            bar.n = global_step
-            bar.total = max_steps
-            bar.refresh()
+    ) -> None:
+        if not trainer.is_global_zero:
+            return
+        if self._bar is None:
+            return
+
+        gs = int(trainer.global_step)
+        if gs == self._last_gs:
+            return  # grad accumulation micro-step; no optimizer step yet
+
+        delta = gs - self._last_gs
+        if delta > 0:
+            self._bar.update(delta)
+            self._last_gs = gs
+
+    def on_train_end(
+        self, trainer: pl.Trainer, pl_module: pl.LightningModule
+    ) -> None:
+        if self._bar is not None:
+            self._bar.close()
+            self._bar = None

@@ -1100,7 +1100,7 @@ class Spec2Pep(pl.LightningModule):
                 f"{mode}_CELoss",
                 loss.detach(),
                 on_step=True,
-                on_epoch=True,
+                on_epoch=False,
                 sync_dist=True,
                 batch_size=pred.shape[0],
             )
