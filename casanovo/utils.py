@@ -331,7 +331,7 @@ class GlobalStepTQDMProgressBar(TQDMProgressBar):
             desc="Global Step",
             position=self.process_position,
             dynamic_ncols=True,
-            leave=self.leave,
+            leave=self._leave,
             disable=disable,
         )
 
