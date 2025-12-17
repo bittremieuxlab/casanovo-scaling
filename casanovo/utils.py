@@ -299,71 +299,52 @@ def divisors(n, reverse: bool = True) -> Iterable[int]:
 #             bar.refresh()
 
 
+
 class GlobalStepTQDMProgressBar(TQDMProgressBar):
-    """One continuous tqdm bar over optimizer steps (global_step), with stable ETA across epochs."""
+    """Show a single continuous train bar in optimizer steps (global_step/max_steps), stable ETA across epochs."""
 
-    def __init__(
-        self,
-        refresh_rate: int = 1,
-        process_position: int = 0,
-        leave: bool = True,
-    ):
-        super().__init__(
-            refresh_rate=refresh_rate, process_position=process_position
-        )
-        self.leave = leave
+    def __init__(self, refresh_rate: int = 1, process_position: int = 0, leave: bool = True):
+        super().__init__(refresh_rate=refresh_rate, process_position=process_position)
+        self._leave = leave
         self._last_gs = -1
-        self._bar: Optional[tqdm] = None
 
-    def on_train_start(
-        self, trainer: pl.Trainer, pl_module: pl.LightningModule
-    ) -> None:
-        # Do NOT call super(): it will create an epoch-scoped bar.
-        if not trainer.is_global_zero:
-            return
+    def init_train_tqdm(self):
+        bar = super().init_train_tqdm()
+        bar.set_description("Global Step")
+        bar.leave = self._leave
+        return bar
 
-        total = int(trainer.max_steps or 0)
-        initial = int(trainer.global_step)
+    def on_train_start(self, trainer: pl.Trainer, pl_module: pl.LightningModule) -> None:
+        # IMPORTANT: initialize internal bar references on *all* ranks
+        super().on_train_start(trainer, pl_module)
 
-        self._bar = tqdm(
-            desc="Global Step",
-            total=total if total > 0 else None,
-            initial=initial,
-            position=self.process_position,
-            dynamic_ncols=True,
-            leave=self.leave,
-        )
-        self._last_gs = initial
-
-        # Let Lightning know what bar to treat as the train bar (for consistency with its internals)
-        self.train_progress_bar = self._bar
-
-    def on_train_epoch_start(
-        self, trainer: pl.Trainer, pl_module: pl.LightningModule
-    ) -> None:
-        # Don't let parent reset/recreate anything
+        # Only rank 0 should actively drive the bar
         self._last_gs = int(trainer.global_step)
 
-    def on_train_batch_end(
-        self, trainer, pl_module, outputs, batch, batch_idx
-    ) -> None:
+        if trainer.is_global_zero and self.train_progress_bar is not None:
+            self.train_progress_bar.set_description("Global Step")
+            self.train_progress_bar.total = int(trainer.max_steps or 0) or None
+            self.train_progress_bar.n = self._last_gs
+            self.train_progress_bar.refresh()
+
+    def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx) -> None:
         if not trainer.is_global_zero:
             return
-        if self._bar is None:
+
+        bar = self.train_progress_bar
+        if bar is None:
             return
 
         gs = int(trainer.global_step)
         if gs == self._last_gs:
-            return  # grad accumulation micro-step; no optimizer step yet
+            return  # grad accumulation micro-step, no optimizer step yet
 
-        delta = gs - self._last_gs
-        if delta > 0:
-            self._bar.update(delta)
-            self._last_gs = gs
+        self._last_gs = gs
+        bar.total = int(trainer.max_steps or 0) or None
+        bar.n = gs
+        bar.update(0)  # cheap redraw vs refresh()
 
-    def on_train_end(
-        self, trainer: pl.Trainer, pl_module: pl.LightningModule
-    ) -> None:
-        if self._bar is not None:
-            self._bar.close()
-            self._bar = None
+    def on_train_epoch_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule) -> None:
+        # Skip parent behavior that assumes epoch-scoped bars / can mess with ETA.
+        # Also prevents extra accesses on non-zero ranks.
+        return
