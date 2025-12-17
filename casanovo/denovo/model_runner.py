@@ -425,7 +425,8 @@ class ModelRunner:
                             ),
                         )
 
-            # # For now, hardcoded on a patience of 50K steps. TODO: Add this to the config
+            # TODO: fix this if we want to have early stopping (not needed with OneCycleLR)
+            # # For now, hardcoded on a patience of 50K steps.
             # patience = 50000 // self.config.val_check_interval
             #
             # self.callbacks.append(
@@ -458,8 +459,8 @@ class ModelRunner:
             additional_cfg = dict(
                 devices=devices,
                 val_check_interval=self.config.val_check_interval
-                * self.config.accumulate_grad_batches
-                * devices,
+                * self.config.accumulate_grad_batches,
+                # * devices,
                 max_steps=max_steps,
                 max_epochs=max_epochs,
                 num_sanity_val_steps=self.config.num_sanity_val_steps,
