@@ -668,7 +668,7 @@ class ModelRunner:
                     // n_devices
                     // self.config.accumulate_grad_batches
                 )
-                eval_batch_size = self.config.predict_batch_size // n_devices
+                eval_batch_size = self.config.predict_batch_size
             except AttributeError:
                 raise RuntimeError(
                     "The trainer must be initialized prior to the data module"

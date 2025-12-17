@@ -299,52 +299,74 @@ def divisors(n, reverse: bool = True) -> Iterable[int]:
 #             bar.refresh()
 
 
-
 class GlobalStepTQDMProgressBar(TQDMProgressBar):
-    """Show a single continuous train bar in optimizer steps (global_step/max_steps), stable ETA across epochs."""
+    """One continuous tqdm bar over optimizer steps (trainer.global_step), stable ETA across epochs."""
 
-    def __init__(self, refresh_rate: int = 1, process_position: int = 0, leave: bool = True):
-        super().__init__(refresh_rate=refresh_rate, process_position=process_position)
-        self._leave = leave
-        self._last_gs = -1
+    def __init__(
+        self,
+        refresh_rate: int = 1,
+        process_position: int = 0,
+        leave: bool = True,
+    ):
+        super().__init__(
+            refresh_rate=refresh_rate,
+            process_position=process_position,
+            leave=leave,
+        )
+        self._last_gs: int = 0
+        self._pbar: Optional[tqdm] = None
 
-    def init_train_tqdm(self):
-        bar = super().init_train_tqdm()
-        bar.set_description("Global Step")
-        bar.leave = self._leave
-        return bar
+    def on_train_start(
+        self, trainer: pl.Trainer, pl_module: pl.LightningModule
+    ) -> None:
+        # Create our own persistent bar ON ALL RANKS to satisfy Lightning's internal expectations.
+        # Only rank 0 shows it; other ranks get a disabled bar to avoid extra output.
+        total = int(trainer.max_steps or 0) or None
+        initial = int(trainer.global_step)
 
-    def on_train_start(self, trainer: pl.Trainer, pl_module: pl.LightningModule) -> None:
-        # IMPORTANT: initialize internal bar references on *all* ranks
-        super().on_train_start(trainer, pl_module)
+        disable = not trainer.is_global_zero
+        self._pbar = tqdm(
+            total=total,
+            initial=initial,
+            desc="Global Step",
+            position=self.process_position,
+            dynamic_ncols=True,
+            leave=self.leave,
+            disable=disable,
+        )
 
-        # Only rank 0 should actively drive the bar
+        # IMPORTANT: set Lightning's internal reference so its hooks don't crash on non-zero ranks
+        self._train_progress_bar = self._pbar
+        self._last_gs = initial
+
+    def on_train_epoch_start(
+        self, trainer: pl.Trainer, pl_module: pl.LightningModule
+    ) -> None:
+        # No epoch-scoped reset/reinit
         self._last_gs = int(trainer.global_step)
 
-        if trainer.is_global_zero and self.train_progress_bar is not None:
-            self.train_progress_bar.set_description("Global Step")
-            self.train_progress_bar.total = int(trainer.max_steps or 0) or None
-            self.train_progress_bar.n = self._last_gs
-            self.train_progress_bar.refresh()
+    def on_train_epoch_end(
+        self, trainer: pl.Trainer, pl_module: pl.LightningModule
+    ) -> None:
+        # No epoch-scoped close/reset
+        return
 
-    def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx) -> None:
-        if not trainer.is_global_zero:
-            return
-
-        bar = self.train_progress_bar
-        if bar is None:
+    def on_train_batch_end(
+        self, trainer, pl_module, outputs, batch, batch_idx
+    ) -> None:
+        if self._pbar is None:
             return
 
         gs = int(trainer.global_step)
-        if gs == self._last_gs:
-            return  # grad accumulation micro-step, no optimizer step yet
+        delta = gs - self._last_gs
+        if delta > 0:
+            # Update by optimizer-step increments (respects grad accumulation)
+            self._pbar.update(delta)
+            self._last_gs = gs
 
-        self._last_gs = gs
-        bar.total = int(trainer.max_steps or 0) or None
-        bar.n = gs
-        bar.update(0)  # cheap redraw vs refresh()
-
-    def on_train_epoch_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule) -> None:
-        # Skip parent behavior that assumes epoch-scoped bars / can mess with ETA.
-        # Also prevents extra accesses on non-zero ranks.
-        return
+    def on_train_end(
+        self, trainer: pl.Trainer, pl_module: pl.LightningModule
+    ) -> None:
+        if self._pbar is not None:
+            self._pbar.close()
+            self._pbar = None
