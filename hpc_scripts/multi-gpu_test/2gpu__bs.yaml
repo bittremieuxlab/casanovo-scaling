@@ -1,0 +1,99 @@
+accelerator: auto
+accumulate_grad_batches: 4
+allowed_fixed_mods: C:C[Carbamidomethyl]
+allowed_var_mods: M:M[Oxidation],N:N[Deamidated],Q:Q[Deamidated],nterm:[Acetyl]-,nterm:[Carbamyl]-,nterm:[Ammonia-loss]-,nterm:[+25.980265]-
+betas:
+- 0.9
+- 0.999
+calculate_precision: false
+cosine_schedule_period_iters: 600000
+cycle_momentum: true
+devices: 2
+digestion: full
+dim_feedforward: 1024
+dim_intensity: null
+dim_model: 512
+div_factor: 100
+dropout: 0.0
+enzyme: trypsin
+final_div_factor: 10
+global_train_batch_size: 8192
+gradient_clip_algorithm: norm
+gradient_clip_val: 2.0
+isotope_error_range:
+- 0
+- 1
+lance_dir: null
+learning_rate: 5e-4
+log_every_n_steps: 10
+log_metrics: true
+lr_scheduler: onecycle
+massivekb_tokenizer: true
+max_charge: 5
+max_epochs: null
+max_mods: 1
+max_mz: 2500.0
+max_peaks: 150
+max_peptide_len: 100
+max_steps: 100
+min_intensity: 0.01
+min_mz: 50.0
+min_peaks: 20
+min_peptide_len: 6
+missed_cleavages: 0
+n_beams: 1
+n_head: 8
+n_layers: 9
+n_log: 1
+num_sanity_val_steps: 0
+optimizer: Adam
+optimizer_eps: 1e-8
+pct_start: 0.167
+precision: 16-mixed
+precursor_mass_tol: 50
+predict_batch_size: 8192
+random_seed: 454
+remove_precursor_tol: 2.0
+replace_isoleucine_with_leucine: true
+residues:
+  A: 71.037114
+  C[Carbamidomethyl]: 160.030649
+  D: 115.026943
+  E: 129.042593
+  F: 147.068414
+  G: 57.021464
+  H: 137.058912
+  I: 113.084064
+  K: 128.094963
+  K[TMT6plex]: 357.257963
+  L: 113.084064
+  M: 131.040485
+  M[Oxidation]: 147.0354
+  N: 114.042927
+  N[Deamidated]: 115.026943
+  P: 97.052764
+  Q: 128.058578
+  Q[Deamidated]: 129.042594
+  R: 156.101111
+  S: 87.032028
+  S[Phospho]: 166.998028
+  T: 101.04767
+  T[Phospho]: 181.01367
+  V: 99.068414
+  W: 186.079313
+  Y: 163.063329
+  Y[Phospho]: 243.029329
+  '[+25.980265]-': 25.980265
+  '[Acetyl]-': 42.010565
+  '[Ammonia-loss]-': -17.026549
+  '[Carbamyl]-': 43.005814
+  '[TMT6plex]-': 229.163
+reverse_peptides: true
+shuffle: true
+shuffle_buffer_size: 50000
+tb_summarywriter: false
+top_match: 1
+train_label_smoothing: 0.001
+val_check_interval: 5
+warmup_iters: 100000
+weight_decay: 1e-5
