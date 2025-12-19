@@ -79,7 +79,13 @@ def submit_job(
 
 
 def submit_grid_commands(
-    experiment, train_file, val_file, exclude=None, echo_only=False, **kwargs
+    experiment,
+    train_file,
+    val_file,
+    dynamic_params=None,
+    exclude=None,
+    echo_only=False,
+    **kwargs,
 ):
     default_config = get_default_config(experiment)
     kwargs = dict(sorted(kwargs.items()))
@@ -89,6 +95,10 @@ def submit_grid_commands(
 
         if exclude is not None and param_combination in exclude:
             continue
+
+        if dynamic_params is not None:
+            for p, c in dynamic_params.items():
+                param_combination[p] = c(param_combination)
 
         submit_job(
             experiment,
@@ -124,8 +134,8 @@ def submit_hpt_commands(
 
 
 if __name__ == "__main__":
-    train_file = "massivekb_data/scaling_data_max_100000/train_2s_1000000p.mgf"
-    val_file = "massivekb_data/scaling_data_max_100000/val_0.25.mgf"
+    # train_file = "massivekb_data/scaling_data_max_100000/train_2s_1000000p.mgf"
+    # val_file = "massivekb_data/scaling_data_max_100000/val_0.25.mgf"
 
     # submit_grid_commands(
     #     experiment="old_optim_scheduler",
@@ -186,12 +196,31 @@ if __name__ == "__main__":
     #     ],
     # )
 
+    # submit_grid_commands(
+    #     experiment="label_smoothing",
+    #     train_file=train_file,
+    #     val_file=val_file,
+    #     train_label_smoothing=[0.0, 0.001, 0.01, 0.03, 0.05, 0.1],
+    #     learning_rate=[
+    #         float(2**p) for p in np.arange(-11.25, -10.25 + 0.25, 0.25)
+    #     ],
+    # )
+
+    ####
+    # MassIVE-KB v2: Model Scaling
+
+    train_file = (
+        "massivekb_data/massiveKB_3cac0386/subsets/train_20s_4243254p.mgf"
+    )
+    val_file = "massivekb_data/massiveKB_3cac0386/subsets/val.mgf"
+
     submit_grid_commands(
-        experiment="label_smoothing",
+        experiment="bs_lr_S",
         train_file=train_file,
         val_file=val_file,
-        train_label_smoothing=[0., 0.001, 0.01, 0.03, 0.05, 0.1],
-        learning_rate=[
-            float(2**p) for p in np.arange(-11.25, -10.25 + 0.25, 0.25)
-        ],
+        dynamic_params={
+            "max_steps": lambda c: 192_000_000 // c["global_train_batch_size"]
+        },
+        global_train_batch_size=[2**x for x in range(5, 12)],
+        learning_rate=[float(10**p) for p in np.arange(-5, -2.5 + 0.5, 0.5)],
     )

@@ -109,4 +109,9 @@ hpc_scripts/*/*.out
 
 hpc_scripts/*/*.yaml
 !hpc_scripts/*/default.yaml
+
 lr_finder.png
+
+massivekb_data/massiveKB_3cac0386/
+
+prospect_data/
