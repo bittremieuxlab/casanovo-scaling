@@ -4,14 +4,14 @@
 
 cd $PBS_O_WORKDIR
 
-export PATH="/readonly$VSC_SCRATCH_PROJECTS_BASE/2025_048/miniconda3/bin:${PATH}"
-source activate casanovo-scaling-readonly
+eval "$(/readonly${VSC_SCRATCH_PROJECTS_BASE}/2025_048/miniconda3/bin/conda shell.bash hook)"
+conda activate casanovo-scaling-readonly
 
 READONLY_BASE="/readonly$VSC_SCRATCH_PROJECTS_BASE/2025_048/casanovo-scaling"
 
 /readonly$VSC_SCRATCH_PROJECTS_BASE/2025_048/miniconda3/envs/casanovo-scaling-readonly/bin/casanovo determine-max-batch-size \
 $READONLY_BASE/massivekb_data/scaling_data_max_100000/bs_finder.mgf \
---config $READONLY_BASE/${CONFIG_FILE} \
+--config $CONFIG_FILE \
 -d $OUTPUT_DIR \
 -o bs_finder \
 -f
@@ -19,7 +19,7 @@ $READONLY_BASE/massivekb_data/scaling_data_max_100000/bs_finder.mgf \
 /readonly$VSC_SCRATCH_PROJECTS_BASE/2025_048/miniconda3/envs/casanovo-scaling-readonly/bin/casanovo train \
 $READONLY_BASE/$TRAIN_FILE \
 --validation_peak_path $READONLY_BASE/$VAL_FILE \
---config $READONLY_BASE/${BS_CONFIG_FILE} \
+--config $BS_CONFIG_FILE \
 -d $OUTPUT_DIR \
 -o train \
 -f
