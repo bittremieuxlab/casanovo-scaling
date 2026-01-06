@@ -683,9 +683,10 @@ class ModelRunner:
 
         lance_dir = (
             Path(self.tmp_dir.name)
-            if self.config.lance_dir is None
+            if (finding_batch_size or self.config.lance_dir is None)
             else self.config.lance_dir
         )
+
         self.loaders = DeNovoDataModule(
             train_paths=train_paths,
             valid_paths=valid_paths,
