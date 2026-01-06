@@ -6,10 +6,16 @@
 
 echo "Starting job $CONFIG_FILE at $(date)"
 
+module purge
+
 cd $SLURM_SUBMIT_DIR
 
 eval "$(/readonly${VSC_SCRATCH_PROJECTS_BASE}/2025_048/miniconda3/bin/conda shell.bash hook)"
 conda activate casanovo-scaling-readonly
+
+python -c "import cryptography; print(cryptography.__file__)"
+python -c "import sys; print(sys.executable); print(sys.version)"
+echo "PYTHONPATH=$PYTHONPATH"
 
 READONLY_BASE="/readonly$VSC_SCRATCH_PROJECTS_BASE/2025_048/casanovo-scaling"
 
