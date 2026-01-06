@@ -35,7 +35,7 @@ def create_config(experiment, default_config, **kwargs):
     return new_config_path, new_bs_config_path, parameter_str
 
 
-def submit_job(
+def submit_pbs_job(
     experiment,
     train_file,
     val_file,
@@ -78,6 +78,51 @@ def submit_job(
         subprocess.run(command, check=True)
 
 
+def submit_slurm_job(
+    experiment,
+    train_file,
+    val_file,
+    param_combination,
+    default_config,
+    echo_only,
+):
+    new_config_path, new_bs_config_path, parameter_str = create_config(
+        experiment, default_config, **param_combination
+    )
+
+    output_dir = os.path.join("logs", experiment, parameter_str)
+    slurm_log_file = os.path.join(
+        output_dir, f"slurm_{datetime.now().strftime('%Y%m%d-%H%M%S')}.out"
+    )
+
+    env_vars = {
+        "TRAIN_FILE": train_file,
+        "VAL_FILE": val_file,
+        "OUTPUT_DIR": output_dir,
+        "CONFIG_FILE": new_config_path,
+        "BS_CONFIG_FILE": new_bs_config_path,
+    }
+
+    slurm_file = os.path.join(
+        "hpc_scripts", experiment, f"{experiment}.sbatch"
+    )
+
+    export_str = "ALL," + ",".join(f"{k}={v}" for k, v in env_vars.items())
+
+    command = [
+        "sbatch",
+        "--output",
+        slurm_log_file,
+        "--export",
+        export_str,
+        slurm_file,
+    ]
+
+    subprocess.run(["echo"] + command, check=True)
+    if not echo_only:
+        subprocess.run(command, check=True)
+
+
 def submit_grid_commands(
     experiment,
     train_file,
@@ -85,10 +130,13 @@ def submit_grid_commands(
     dynamic_params=None,
     exclude=None,
     echo_only=False,
+    use_slurm=True,
     **kwargs,
 ):
     default_config = get_default_config(experiment)
     kwargs = dict(sorted(kwargs.items()))
+
+    submit_func = submit_slurm_job if use_slurm else submit_pbs_job
 
     for param_combination in itertools.product(*kwargs.values()):
         param_combination = dict(zip(kwargs.keys(), param_combination))
@@ -100,7 +148,7 @@ def submit_grid_commands(
             for p, c in dynamic_params.items():
                 param_combination[p] = c(param_combination)
 
-        submit_job(
+        submit_func(
             experiment,
             train_file,
             val_file,
@@ -222,7 +270,8 @@ if __name__ == "__main__":
             "max_steps": lambda c: 192_000_000 // c["global_train_batch_size"],
             "val_check_interval": lambda c: c["max_steps"] // 20,
         },
-        global_train_batch_size=[2**x for x in range(5, 12)],
+        # global_train_batch_size=[2**x for x in range(5, 12)],
+        global_train_batch_size=[2**x for x in range(5, 5)],
         # learning_rate=[float(10**p) for p in np.arange(-5, -2.5 + 0.5, 0.5)],
-        learning_rate=[float(10 ** p) for p in np.arange(-5, -5 + 0.5, 0.5)],
+        learning_rate=[float(10**p) for p in np.arange(-5, -5 + 0.5, 0.5)],
     )

@@ -1,10 +1,12 @@
-#PBS -A 2025_048
-#PBS -l walltime=72:00:00
-#PBS -l gpus=4
+#SBATCH -A 2025_048
+#SBATCH --time=72:00:00
+#SBATCH --gpus=4
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=48
 
 echo "Starting job $CONFIG_FILE at $(date)"
 
-cd $PBS_O_WORKDIR
+cd $SLURM_SUBMIT_DIR
 
 eval "$(/readonly${VSC_SCRATCH_PROJECTS_BASE}/2025_048/miniconda3/bin/conda shell.bash hook)"
 conda activate casanovo-scaling-readonly
