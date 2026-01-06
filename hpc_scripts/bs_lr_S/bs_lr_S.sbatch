@@ -1,3 +1,4 @@
+#!/bin/sh
 #SBATCH -A 2025_048
 #SBATCH --time=72:00:00
 #SBATCH --gpus=4
