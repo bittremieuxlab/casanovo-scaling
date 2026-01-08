@@ -271,7 +271,7 @@ if __name__ == "__main__":
             "val_check_interval": lambda c: c["max_steps"] // 20,
         },
         # global_train_batch_size=[2**x for x in range(5, 12)],
-        global_train_batch_size=[2**x for x in range(5, 6)],
+        global_train_batch_size=[2**x for x in range(6, 9)],
         # learning_rate=[float(10**p) for p in np.arange(-5, -2.5 + 0.5, 0.5)],
         learning_rate=[float(10**p) for p in np.arange(-5, -5 + 0.5, 0.5)],
     )
