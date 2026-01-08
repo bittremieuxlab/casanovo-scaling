@@ -706,6 +706,7 @@ class ModelRunner:
             n_workers=self.config.n_workers,
             lance_dir=lance_dir,
         )
+        print(f"Setup data module Using {self.config.n_workers} workers")
 
     def _get_input_paths(
         self,
