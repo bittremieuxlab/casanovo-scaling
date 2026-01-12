@@ -22,6 +22,7 @@ def create_config(experiment, default_config, eval, **kwargs):
 
     if eval:
         config["precision"] = "32-true"
+        config["lance_dir"] = None
 
     for k, v in kwargs.items():
         if isinstance(v, (list, tuple, set)):

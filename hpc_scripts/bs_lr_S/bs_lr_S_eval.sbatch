@@ -19,7 +19,7 @@ READONLY_BASE="/readonly$VSC_SCRATCH_PROJECTS_BASE/2025_048/casanovo-scaling"
 echo "Sequencing validation data for $CONFIG_FILE at $(date)"
 
 /readonly$VSC_SCRATCH_PROJECTS_BASE/2025_048/miniconda3/envs/casanovo-scaling-readonly/bin/casanovo sequence \
-$READONLY_BASE/massivekb_data/massiveKB_3cac0386/subsets/train_20s_4243254p/valid.lance \
+$READONLY_BASE/massivekb_data/massiveKB_3cac0386/subsets/val.mgf \
 --config $CONFIG_FILE \
 --model $OUTPUT_DIR/train.best.ckpt \
 -d $OUTPUT_DIR \
