@@ -361,6 +361,81 @@ def plot_param_vs_lr(df, param_name: str):
     plt.show()
 
 
+def plot_param_lr_heatmap(
+    df,
+    param_name: str,
+    cmap="viridis",
+):
+    """
+    Plot a 2D heatmap of validation loss for (param_name, learning_rate).
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Must contain columns: param_name, 'learning_rate', 'min_val_loss'
+    param_name : str
+        Name of the hyperparameter to plot on the y-axis
+    cmap : str, default="viridis"
+        Matplotlib colormap
+    """
+
+    # Aggregate loss values
+    agg = (
+        df.groupby([param_name, "learning_rate"], dropna=False)["min_val_loss"]
+        .agg("min")
+        .reset_index()
+    )
+
+    # Pivot to matrix form: rows=param, cols=lr
+    heatmap_df = agg.pivot(
+        index=param_name,
+        columns="learning_rate",
+        values="min_val_loss",
+    )
+
+    # Sort axes
+    heatmap_df = heatmap_df.sort_index()
+    heatmap_df = heatmap_df.reindex(sorted(heatmap_df.columns), axis=1)
+
+    # Convert learning rates to log-space for even spacing
+    lr_values = heatmap_df.columns.to_numpy()
+    log_lrs = np.log10(lr_values)
+
+    Z = heatmap_df.to_numpy()
+
+    plt.figure(figsize=(7, 5))
+
+    im = plt.imshow(
+        Z,
+        aspect="auto",
+        origin="lower",
+        cmap=cmap,
+        interpolation="nearest",
+    )
+
+    # Axis ticks & labels
+    plt.xticks(
+        ticks=np.arange(len(log_lrs)),
+        labels=[f"{lr:.1e}" for lr in lr_values],
+        rotation=45,
+        ha="right",
+    )
+    plt.yticks(
+        ticks=np.arange(len(heatmap_df.index)),
+        labels=heatmap_df.index.astype(str),
+    )
+
+    plt.xlabel("Learning rate")
+    plt.ylabel(param_name)
+    plt.title(f"Validation loss heatmap ({param_name} vs LR)")
+
+    cbar = plt.colorbar(im)
+    cbar.set_label("Min validation loss")
+
+    plt.tight_layout()
+    plt.show()
+
+
 def plot_2D_heatmap(experiment, x, y, z, max_z=None, method="nearest"):
     x_v, y_v, z_v = metrics_from_hpt(experiment, x, y, z, max_z)
 
@@ -433,13 +508,14 @@ def plot_grid_search_results(
             print(f"Skipping {param} — not found in directory names.")
             continue
         plot_param_vs_lr(df, param)
+        plot_param_lr_heatmap(df, param, "viridis_r")
 
 
 if __name__ == "__main__":
     # plot_training_metrics(
     #     "logs/casanovo_train_subsets/1s_100000p/csv_logs/metrics.csv"
     # )
-    plot_train_subsets_grid(max_loss=0.5)
+    # plot_train_subsets_grid(max_loss=0.5)
 
     # load_past_results(
     #     name="bs_lr_default",
@@ -477,3 +553,18 @@ if __name__ == "__main__":
     #     max_loss=0.3,
     # )
     # plot_train_subsets_grid("logs/v2_train_subsets", max_loss=0.5)
+
+    plot_grid_search_results(
+        root_dir="logs/bs_lr_S",
+        params=["global_train_batch_size"],
+        max_loss=1,
+    )
+
+    # plot_2D_heatmap(
+    #     "bs_lr_S",
+    #     x="learning_rate",
+    #     y="global_train_batch_size",
+    #     z="valid_CELoss",
+    #     max_z=None,
+    #     method="cubic",
+    # )

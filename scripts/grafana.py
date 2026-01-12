@@ -5,6 +5,7 @@ import os
 import subprocess
 
 import pandas as pd
+import yaml
 from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 
@@ -40,12 +41,15 @@ def save_state(state):
         json.dump(state, f)
 
 
-def load_metrics(csv_path, keys):
+def load_metrics(csv_path, keys, keep_nans=False):
     df = pd.read_csv(csv_path)
     dfs = {}
     for key in keys:
         if key in df.columns:
-            dfs[key] = df[df[key].notna()]
+            if keep_nans:
+                dfs[key] = df
+            else:
+                dfs[key] = df[df[key].notna()]
     return dfs
 
 
@@ -116,8 +120,43 @@ def sync_logs(
     print("Sync complete.")
 
 
+def verify_runs(experiment_name):
+    log_dir = os.path.join("logs", experiment_name)
+    for run in os.listdir(log_dir):
+        csv_path = os.path.join(log_dir, run, "csv_logs", "metrics.csv")
+        config_path = os.path.join(
+            "hpc_scripts", experiment_name, f"{run}.yaml"
+        )
+        if not os.path.exists(csv_path):
+            print(f"Could not find {csv_path}")
+            continue
+
+        if not os.path.exists(config_path):
+            print(f"Could not find {config_path}")
+            continue
+
+        metrics_dfs = load_metrics(
+            csv_path,
+            ["valid_CELoss"],
+            keep_nans=True,
+        )
+        config = yaml.safe_load(open(config_path, "r"))
+
+        expected_steps = config["max_steps"]
+        max_valid_steps = max(metrics_dfs["valid_CELoss"]["step"])
+
+        if max_valid_steps + 1 < expected_steps:
+            print(
+                f"Run {run} only did {max_valid_steps + 1} instead of {expected_steps} steps."
+            )
+
+
 if __name__ == "__main__":
     sync_logs()
+    sync_logs(
+        remote="vsc20683@tier1.hpc.ugent.be:/dodrio/scratch/projects/2025_048/casanovo-scaling/hpc_scripts/",
+        local="/home/pigeonmark/Documents/casanovo-scaling/hpc_scripts/",
+    )
     dbclient = setup_db()
     # sync_metrics(
     #     dbclient,
@@ -220,14 +259,28 @@ if __name__ == "__main__":
     #     ],
     # )
 
-    sync_metrics(
-        dbclient,
-        experiment_name="v2_train_subsets",
-        log_dir="logs/v2_train_subsets/",
-        metric_keys=[
-            "lr-Adam",
-            "lr-Adam-momentum",
-            "train_CELoss_step",
-            "valid_CELoss",
-        ],
-    )
+    # sync_metrics(
+    #     dbclient,
+    #     experiment_name="v2_train_subsets",
+    #     log_dir="logs/v2_train_subsets/",
+    #     metric_keys=[
+    #         "lr-Adam",
+    #         "lr-Adam-momentum",
+    #         "train_CELoss_step",
+    #         "valid_CELoss",
+    #     ],
+    # )
+
+    # sync_metrics(
+    #     dbclient,
+    #     experiment_name="bs_lr_S",
+    #     log_dir="logs/bs_lr_S/",
+    #     metric_keys=[
+    #         "lr-Adam",
+    #         "lr-Adam-momentum",
+    #         "train_CELoss_step",
+    #         "valid_CELoss",
+    #     ],
+    # )
+
+    verify_runs(experiment_name="bs_lr_S")

@@ -16,7 +16,7 @@ def get_default_config(experiment):
         return yaml.safe_load(d_conf)
 
 
-def create_config(experiment, default_config, **kwargs):
+def create_config(experiment, default_config, eval, **kwargs):
     config = copy.deepcopy(default_config)
     config.update(kwargs)
     for k, v in kwargs.items():
@@ -30,8 +30,9 @@ def create_config(experiment, default_config, **kwargs):
         "hpc_scripts", experiment, f"{parameter_str}__bs.yaml"
     )
 
-    with open(new_config_path, "w") as new_conf:
-        yaml.dump(config, new_conf)
+    if not eval:
+        with open(new_config_path, "w") as new_conf:
+            yaml.dump(config, new_conf)
     return new_config_path, new_bs_config_path, parameter_str
 
 
@@ -85,14 +86,16 @@ def submit_slurm_job(
     param_combination,
     default_config,
     echo_only,
+    eval,
 ):
     new_config_path, new_bs_config_path, parameter_str = create_config(
-        experiment, default_config, **param_combination
+        experiment, default_config, eval, **param_combination
     )
 
     output_dir = os.path.join("logs", experiment, parameter_str)
     slurm_log_file = os.path.join(
-        output_dir, f"slurm_{datetime.now().strftime('%Y%m%d-%H%M%S')}.out"
+        output_dir,
+        f"slurm_{'eval_' if eval else ''}{datetime.now().strftime('%Y%m%d-%H%M%S')}.out",
     )
 
     env_vars = {
@@ -104,7 +107,9 @@ def submit_slurm_job(
     }
 
     slurm_file = os.path.join(
-        "hpc_scripts", experiment, f"{experiment}.sbatch"
+        "hpc_scripts",
+        experiment,
+        f"{experiment}{'_eval' if eval else ''}.sbatch",
     )
 
     export_str = "ALL," + ",".join(f"{k}={v}" for k, v in env_vars.items())
@@ -131,6 +136,7 @@ def submit_grid_commands(
     exclude=None,
     echo_only=False,
     use_slurm=True,
+    eval=False,
     **kwargs,
 ):
     default_config = get_default_config(experiment)
@@ -155,6 +161,7 @@ def submit_grid_commands(
             param_combination,
             default_config,
             echo_only,
+            eval,
         )
 
 
@@ -270,6 +277,8 @@ if __name__ == "__main__":
             "max_steps": lambda c: 192_000_000 // c["global_train_batch_size"],
             "val_check_interval": lambda c: c["max_steps"] // 20,
         },
-        global_train_batch_size=[2**x for x in range(11, 12)],
+        global_train_batch_size=[2**x for x in range(6, 11)],
         learning_rate=[float(10**p) for p in np.arange(-5, -2.5 + 0.5, 0.5)],
+        eval=True,
+        echo_only=True,
     )
