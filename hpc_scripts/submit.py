@@ -19,20 +19,26 @@ def get_default_config(experiment):
 def create_config(experiment, default_config, eval, **kwargs):
     config = copy.deepcopy(default_config)
     config.update(kwargs)
+
+    if eval:
+        config["precision"] = "32-true"
+
     for k, v in kwargs.items():
         if isinstance(v, (list, tuple, set)):
             kwargs[k] = "_".join([str(w) for w in v])
     parameter_str = "+".join([f"{k}@{v}" for k, v in kwargs.items()])
     new_config_path = os.path.join(
-        "hpc_scripts", experiment, f"{parameter_str}.yaml"
+        "hpc_scripts",
+        experiment,
+        f"{parameter_str}{'_eval' if eval else ''}.yaml",
     )
     new_bs_config_path = os.path.join(
         "hpc_scripts", experiment, f"{parameter_str}__bs.yaml"
     )
 
-    if not eval:
-        with open(new_config_path, "w") as new_conf:
-            yaml.dump(config, new_conf)
+    with open(new_config_path, "w") as new_conf:
+        yaml.dump(config, new_conf)
+
     return new_config_path, new_bs_config_path, parameter_str
 
 
@@ -280,5 +286,4 @@ if __name__ == "__main__":
         global_train_batch_size=[2**x for x in range(6, 11)],
         learning_rate=[float(10**p) for p in np.arange(-5, -2.5 + 0.5, 0.5)],
         eval=True,
-        echo_only=True,
     )
