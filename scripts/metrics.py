@@ -557,14 +557,5 @@ if __name__ == "__main__":
     plot_grid_search_results(
         root_dir="logs/bs_lr_S",
         params=["global_train_batch_size"],
-        max_loss=1,
+        max_loss=0.6,
     )
-
-    # plot_2D_heatmap(
-    #     "bs_lr_S",
-    #     x="learning_rate",
-    #     y="global_train_batch_size",
-    #     z="valid_CELoss",
-    #     max_z=None,
-    #     method="cubic",
-    # )

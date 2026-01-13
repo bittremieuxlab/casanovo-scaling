@@ -284,7 +284,21 @@ if __name__ == "__main__":
             "max_steps": lambda c: 192_000_000 // c["global_train_batch_size"],
             "val_check_interval": lambda c: c["max_steps"] // 20,
         },
-        global_train_batch_size=[2**x for x in range(6, 11)],
+        global_train_batch_size=[2**x for x in range(11, 12)],
         learning_rate=[float(10**p) for p in np.arange(-5, -2.5 + 0.5, 0.5)],
         eval=True,
+    )
+
+    submit_grid_commands(
+        experiment="bs_lr_S",
+        train_file=train_file,
+        val_file=val_file,
+        dynamic_params={
+            "max_steps": lambda c: 192_000_000 // c["global_train_batch_size"],
+            "val_check_interval": lambda c: c["max_steps"] // 20,
+        },
+        global_train_batch_size=[2**x for x in range(8, 12)],
+        learning_rate=[
+            float(10**p) for p in np.arange(-4.25, -2.75 + 0.5, 0.5)
+        ],
     )
