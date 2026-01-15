@@ -1,8 +1,8 @@
 #!/bin/sh
 #SBATCH -A 2025_048
 #SBATCH --time=72:00:00
-#SBATCH --gpus=2
-#SBATCH --ntasks-per-node=2
+#SBATCH --gpus=4
+#SBATCH --ntasks-per-node=4
 #SBATCH --cpus-per-task=12
 
 echo "Starting job $CONFIG_FILE at $(date)"
