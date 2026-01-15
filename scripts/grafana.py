@@ -271,16 +271,18 @@ if __name__ == "__main__":
     #     ],
     # )
 
-    # sync_metrics(
-    #     dbclient,
-    #     experiment_name="bs_lr_S",
-    #     log_dir="logs/bs_lr_S/",
-    #     metric_keys=[
-    #         "lr-Adam",
-    #         "lr-Adam-momentum",
-    #         "train_CELoss_step",
-    #         "valid_CELoss",
-    #     ],
-    # )
+    sync_metrics(
+        dbclient,
+        experiment_name="bs_lr_S",
+        log_dir="logs/bs_lr_S/",
+        metric_keys=[
+            "lr-Adam",
+            "lr-Adam-momentum",
+            "train_CELoss_step",
+            "valid_CELoss",
+        ],
+    )
 
+    print()
+    print()
     verify_runs(experiment_name="bs_lr_S")

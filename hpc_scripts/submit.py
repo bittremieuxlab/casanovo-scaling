@@ -276,7 +276,7 @@ if __name__ == "__main__":
     )
     val_file = "massivekb_data/massiveKB_3cac0386/subsets/val.mgf"
 
-    #submit_grid_commands(
+    # submit_grid_commands(
     #    experiment="bs_lr_S",
     #    train_file=train_file,
     #    val_file=val_file,
@@ -287,19 +287,33 @@ if __name__ == "__main__":
     #    global_train_batch_size=[2**x for x in range(11, 12)],
     #    learning_rate=[float(10**p) for p in np.arange(-5, -2.5 + 0.5, 0.5)],
     #    eval=True,
-    #)
+    # )
+    #
+    # submit_grid_commands(
+    #     experiment="bs_lr_S",
+    #     train_file=train_file,
+    #     val_file=val_file,
+    #     dynamic_params={
+    #         "max_steps": lambda c: 192_000_000 // c["global_train_batch_size"],
+    #         "val_check_interval": lambda c: c["max_steps"] // 20,
+    #     },
+    #     global_train_batch_size=[2**x for x in range(8, 12)],
+    #     learning_rate=[
+    #         float(10**p) for p in np.arange(-4.25, -2.75 + 0.5, 0.5)
+    #     ],
+    #     eval=True,
+    # )
+
+    ### MEDIUM MODEL
 
     submit_grid_commands(
-        experiment="bs_lr_S",
+        experiment="bs_lr_M",
         train_file=train_file,
         val_file=val_file,
         dynamic_params={
             "max_steps": lambda c: 192_000_000 // c["global_train_batch_size"],
             "val_check_interval": lambda c: c["max_steps"] // 20,
         },
-        global_train_batch_size=[2**x for x in range(8, 12)],
-        learning_rate=[
-            float(10**p) for p in np.arange(-4.25, -2.75 + 0.5, 0.5)
-        ],
-        eval=True,
+        global_train_batch_size=[2**x for x in range(7, 12)],
+        learning_rate=[float(10**p) for p in np.arange(-5, -2.5 + 0.5, 0.5)],
     )
