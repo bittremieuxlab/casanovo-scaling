@@ -10,7 +10,7 @@ from datasail.sail import datasail
 from pyteomics import mgf
 from tqdm import tqdm
 
-from dist_matrix import rectangle_distance_matrix
+from massivekb_data.dist_matrix import rectangle_distance_matrix
 
 
 def remove_ptms(seq):
