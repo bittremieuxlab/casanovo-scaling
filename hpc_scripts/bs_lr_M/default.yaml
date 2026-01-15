@@ -111,13 +111,13 @@ max_charge: 5
 
 # MODEL ARCHITECTURE OPTIONS
 # Dimensionality of latent representations, i.e. peak embeddings.
-dim_model: 512
+dim_model: 768
 # Number of attention heads.
-n_head: 8
+n_head: 12
 # Dimensionality of fully connected layers.
-dim_feedforward: 1024
+dim_feedforward: 2048
 # Number of transformer layers in spectrum encoder and peptide decoder.
-n_layers: 9
+n_layers: 15
 # Dropout rate for model weights.
 dropout: 0.0
 # Number of dimensions to use for encoding peak intensity.

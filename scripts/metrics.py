@@ -3,6 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import yaml
 from matplotlib import colors
 from scipy.interpolate import griddata
 
@@ -298,7 +299,7 @@ def plot_gradient_clip_results(root_dir="logs/introducing_new"):
     plt.show()
 
 
-def load_results(root_dir: str, max_loss=None):
+def load_results(root_dir: str, config_dir: str, max_loss=None):
     """Load all runs into a list of dicts."""
     results = []
     for d in os.listdir(root_dir):
@@ -314,6 +315,13 @@ def load_results(root_dir: str, max_loss=None):
         val_loss = metrics_df["valid_CELoss"].min()
         if max_loss is not None and val_loss > max_loss:  # ignore failed runs
             val_loss = np.nan
+
+        config_path = os.path.join(config_dir, f"{d}.yaml")
+        config = yaml.safe_load(open(config_path, "r"))
+        expected_steps = config["max_steps"]
+        max_valid_steps = max(metrics_df["step"])
+        if max_valid_steps + 21 < expected_steps:
+            continue
 
         params["min_val_loss"] = val_loss
         results.append(params)
@@ -494,12 +502,15 @@ def plot_2D_heatmap(experiment, x, y, z, max_z=None, method="nearest"):
 
 
 def plot_grid_search_results(
-    root_dir="logs/optimizer", params=None, max_loss=None
+    root_dir="logs/optimizer",
+    config_dir="hpc_scripts/optimizer",
+    params=None,
+    max_loss=None,
 ):
     if params is None:
         params = ["betas", "optimizer", "weight_decay"]
 
-    df = load_results(root_dir, max_loss)
+    df = load_results(root_dir, config_dir, max_loss)
 
     print(f"Loaded {len(df)} runs with columns: {list(df.columns)}")
 
@@ -556,6 +567,13 @@ if __name__ == "__main__":
 
     plot_grid_search_results(
         root_dir="logs/bs_lr_S",
+        config_dir="hpc_scripts/bs_lr_S",
         params=["global_train_batch_size"],
-        max_loss=0.6,
+        max_loss=None,
+    )
+    plot_grid_search_results(
+        root_dir="logs/bs_lr_S",
+        config_dir="hpc_scripts/bs_lr_S",
+        params=["global_train_batch_size"],
+        max_loss=0.5,
     )
