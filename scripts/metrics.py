@@ -308,7 +308,11 @@ def load_results(root_dir: str, config_dir: str, max_loss=None):
         if not os.path.exists(metrics_path):
             continue
 
-        metrics_df = pd.read_csv(metrics_path)
+        try:
+            metrics_df = pd.read_csv(metrics_path)
+        except pd.errors.EmptyDataError:
+            continue
+
         if "valid_CELoss" not in metrics_df.columns:
             continue
 
@@ -565,12 +569,18 @@ if __name__ == "__main__":
     # )
     # plot_train_subsets_grid("logs/v2_train_subsets", max_loss=0.5)
 
-    plot_grid_search_results(
-        root_dir="logs/bs_lr_S",
-        config_dir="hpc_scripts/bs_lr_S",
-        params=["global_train_batch_size"],
-        max_loss=None,
-    )
+    # plot_grid_search_results(
+    #     root_dir="logs/bs_lr_M",
+    #     config_dir="hpc_scripts/bs_lr_M",
+    #     params=["global_train_batch_size"],
+    #     max_loss=None,
+    # )
+    # plot_grid_search_results(
+    #     root_dir="logs/bs_lr_S",
+    #     config_dir="hpc_scripts/bs_lr_S",
+    #     params=["global_train_batch_size"],
+    #     max_loss=None,
+    # )
     plot_grid_search_results(
         root_dir="logs/bs_lr_S",
         config_dir="hpc_scripts/bs_lr_S",

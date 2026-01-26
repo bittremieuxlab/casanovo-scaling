@@ -42,7 +42,11 @@ def save_state(state):
 
 
 def load_metrics(csv_path, keys, keep_nans=False):
-    df = pd.read_csv(csv_path)
+    try:
+        df = pd.read_csv(csv_path)
+    except pd.errors.EmptyDataError as e:
+        print(e)
+        return None
     dfs = {}
     for key in keys:
         if key in df.columns:
@@ -75,6 +79,10 @@ def sync_metrics(dbclient, log_dir, experiment_name, metric_keys):
             csv_path,
             metric_keys,
         )
+
+        if metrics_dfs is None:
+            continue
+
         points = []
         for metric_type, metric_df in metrics_dfs.items():
             for _, row in metric_df.iterrows():
@@ -140,6 +148,10 @@ def verify_runs(experiment_name):
             ["valid_CELoss"],
             keep_nans=True,
         )
+
+        if metrics_dfs is None:
+            continue
+
         config = yaml.safe_load(open(config_path, "r"))
 
         expected_steps = config["max_steps"]
@@ -273,8 +285,8 @@ if __name__ == "__main__":
 
     sync_metrics(
         dbclient,
-        experiment_name="bs_lr_S",
-        log_dir="logs/bs_lr_S/",
+        experiment_name="bs_lr_M",
+        log_dir="logs/bs_lr_M/",
         metric_keys=[
             "lr-Adam",
             "lr-Adam-momentum",
@@ -285,4 +297,4 @@ if __name__ == "__main__":
 
     print()
     print()
-    verify_runs(experiment_name="bs_lr_S")
+    verify_runs(experiment_name="bs_lr_M")
