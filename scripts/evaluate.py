@@ -376,8 +376,3 @@ def get_evaluator():
     if _evaluator_instance is None:
         _evaluator_instance = ExperimentEvaluator()
     return _evaluator_instance
-
-# Deprecated but kept for compatibility - lazily accessed if possible, but AA_MASSES is a dict...
-# If we instantiate here, we trigger the Unimod load.
-# Let's change ExperimentEvaluator.__init__ to not load Unimod by default, or catch the error.
-
